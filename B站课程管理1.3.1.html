@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B站课程管理</title>
+    <style>
+        :root {
+            --bili-pink: #fb7299;
+            --bili-blue: #23ade5;
+            --hover-bg: #f8f9fa;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        h1 {
+            color: var(--bili-pink);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+        .panel {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eaeaea;
+        }
+        th {
+            background-color: #f8f9fa;
+            position: sticky;
+            top: 0;
+            font-weight: 500;
+        }
+        tr:hover {
+            background-color: var(--hover-bg);
+        }
+        .course-row {
+            cursor: pointer;
+        }
+        .course-row.active {
+            background-color: #e6f7ff;
+        }
+        .course-row.current-learning {
+            background-color: #fffbe6;
+            border-left: 3px solid #faad14;
+        }
+        input, textarea, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        button {
+            background-color: var(--bili-pink);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background-color: #e65c8b;
+        }
+        button.secondary {
+            background-color: var(--bili-blue);
+        }
+        button.secondary:hover {
+            background-color: #1e9bd1;
+        }
+        button.danger {
+            background-color: #dc3545;
+        }
+        button.danger:hover {
+            background-color: #c82333;
+        }
+        button.warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        button.warning:hover {
+            background-color: #e0a800;
+        }
+        button.set-current-btn {
+            background-color: var(--bili-blue);
+        }
+        button.set-current-btn:hover {
+             background-color: #1e9bd1;
+        }
+        .progress-container {
+            display: flex;
+            align-items: center;
+        }
+        progress {
+            flex: 1;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 10px;
+        }
+        .video-completed {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .actions button, .actions input, .actions label {
+            width: auto;
+            margin-bottom: 0;
+        }
+        .actions label {
+            line-height: 38px;
+        }
+        .actions input[type="text"], .actions input[type="date"],
+        .actions input[type="number"] {
+            flex-grow: 1;
+            max-width: 150px;
+            padding: 9px;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tabs { display: flex; border-bottom: 1px solid #ddd; margin-bottom: 15px; }
+        .tab { padding: 10px 20px; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab.active { border-bottom-color: var(--bili-pink); color: var(--bili-pink); font-weight: 500; }
+        .time-cell { font-family: monospace; color: #6c757d; }
+        #edit-course-name { padding: 5px 10px; font-size: 14px; vertical-align: middle; margin-bottom: 15px; width: auto; }
+        #current-course-name { display: inline-block; margin-bottom: 15px; }
+
+        .chart-container { margin: 20px 0; height: 300px; }
+        .stats-card { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-item { background: #f8f9fa; border-radius: 8px; padding: 15px; text-align: center; }
+        .stat-value { font-size: 24px; font-weight: bold; margin: 5px 0; }
+        .stat-label { color: #6c757d; font-size: 14px; }
+        .goal-section { background: #f8f9fa; border-radius: 8px; padding: 15px; margin-top: 20px; }
+        .goal-section h3 { margin-top: 0; color: var(--bili-pink); }
+        .goal-section .actions { margin-bottom: 0; }
+        .goal-section input { max-width: 100px; }
+        .completed-date-cell { font-size: 0.9em; color: #888; margin-top: 4px; display: block; }
+
+        .study-timer-section { background: #f8f9fa; border-radius: 8px; padding: 15px; margin-top: 20px; text-align: center; }
+        .study-timer-section h3 { margin-top: 0; color: var(--bili-blue); }
+        #timer-display { font-family: 'monospace'; font-size: 3em; font-weight: bold; margin: 15px 0; color: #333; }
+        .timer-controls { display: flex; gap: 10px; margin-bottom: 15px; }
+        .timer-controls button { flex: 1; margin-bottom: 0; }
+        .timer-controls input { width: calc(100% - 20px); margin-bottom: 0; }
+
+        #log-summary { font-size: 1.2em; font-weight: 500; margin-bottom: 15px; text-align: center; }
+        #log-summary span { color: var(--bili-pink); }
+        #log-table { margin-top: 20px; }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
+        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; border-radius: 8px; width: 80%; max-width: 500px; }
+        .modal-content label { display: block; margin-top: 10px; text-align: left; }
+        .modal-content input, .modal-content textarea { margin-bottom: 15px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-actions button { width: auto; }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-btn:hover, .close-btn:focus { color: black; text-decoration: none; }
+
+        .index-cell { text-align: center; color: #aaa; font-size: 0.9em; font-weight: bold; }
+
+        #back-to-top-btn {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 99;
+            border: none;
+            outline: none;
+            background-color: var(--bili-blue);
+            color: white;
+            cursor: pointer;
+            border-radius: 50%;
+            font-size: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: opacity 0.3s, transform 0.3s;
+            width: 45px;
+            height: 45px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        #back-to-top-btn:hover {
+            background-color: #1c9cd3;
+            transform: scale(1.1);
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <h1>B站课程学习管理</h1>
+
+    <div class="container">
+        <div class="panel">
+            <div class="tabs">
+                <div class="tab" data-tab="overview">进度总览</div>
+                <div class="tab" data-tab="courses">课程列表</div>
+                <div class="tab" data-tab="videos">课程详情</div>
+                <div class="tab" data-tab="log">学习日志</div>
+            </div>
+
+            <div id="overview-tab" class="tab-content">
+                <div class="stats-card">
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-courses">0</div>
+                        <div class="stat-label">总课程数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-videos">0</div>
+                        <div class="stat-label">总视频数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="completed-videos">0</div>
+                        <div class="stat-label">已完成视频</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-hours">0</div>
+                        <div class="stat-label">总时长(小时)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="completed-audio-hours">0</div>
+                        <div class="stat-label">已听课时长(小时)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="remaining-audio-hours">0</div>
+                        <div class="stat-label">未听课时长(小时)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="actual-study-hours">0</div>
+                        <div class="stat-label">学习计时器统计(小时)</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="courseProgressChart"></canvas>
+                </div>
+
+                <div class="actions">
+                    <button id="sort-chart-by-total">按总时长排序</button>
+                    <button id="sort-chart-by-completed">按已听课时长排序</button>
+                    <button id="sort-chart-by-progress">按听课进度排序</button>
+                </div>
+
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="studyTrendChart"></canvas>
+                </div>
+
+                <div class="goal-section">
+                    <h3>学习目标</h3>
+                    <div class="actions">
+                        <label for="weekly-goal">每周目标:</label>
+                        <input type="number" id="weekly-goal" min="0" placeholder="小时">
+                        <button id="set-weekly-goal">设置目标</button>
+                    </div>
+                    <p>最近7天已完成: <span id="current-week-hours">0</span> 小时 / <span id="target-weekly-goal">0</span> 小时</p>
+                    <progress id="weekly-goal-progress" value="0" max="100" style="width: 100%; margin-top: 10px;"></progress>
+                </div>
+
+            </div>
+
+            <div id="courses-tab" class="tab-content">
+                 <div class="actions">
+                    <button id="sort-by-date">按添加时间 ▼</button>
+                    <button id="sort-by-progress">按学习进度 ▼</button>
+                </div>
+                <table id="courses-table">
+                    <thead>
+                        <tr>
+                            <th>课程名称</th>
+                            <th>添加时间</th>
+                            <th>视频数</th>
+                            <th>学习进度</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="courses-body"></tbody>
+                </table>
+            </div>
+
+            <div id="videos-tab" class="tab-content">
+                <h2 id="current-course-name"></h2>
+                <button id="edit-course-name" class="secondary" style="margin-left: 10px;">修改名称</button>
+                <div class="actions" style="margin-top: 15px; margin-bottom: 15px;">
+                    <button id="jump-to-last-completed" class="secondary" style="background-color: var(--bili-blue);">定位到上次进度</button>
+                    <button id="append-episodes-btn" class="secondary" style="margin-left: 10px; background-color:var(--bili-blue);">补充集数</button>
+                    <br>
+                    <label for="video-range-input">标记范围:</label>
+                    <input type="text" id="video-range-input" placeholder="例如: 5-10">
+                    <button id="mark-range-completed">已完成</button>
+                    <button id="mark-range-uncompleted" class="secondary">未完成</button>
+
+                    <label for="completion-date-input">完成日期:</label>
+                    <input type="date" id="completion-date-input">
+                </div>
+
+                <table id="videos-table">
+                    <thead>
+                        <tr>
+                            <th width="5%">#</th>
+                            <th width="45%">视频标题</th>
+                            <th>时长</th>
+                            <th>完成状态 & 完成日期</th>
+                        </tr>
+                    </thead>
+                    <tbody id="videos-body"></tbody>
+                </table>
+            </div>
+
+            <div id="log-tab" class="tab-content">
+                <h2>学习日志</h2>
+                <div class="actions" id="log-filter-actions">
+                    <button data-range="today">今天</button>
+                    <button data-range="yesterday">昨天</button>
+                    <button data-range="last7days" class="active">最近7天</button>
+                    <button data-range="thisMonth">本月</button>
+                    <button data-range="lastMonth">上个月</button>
+                    <button data-range="all">全部</button>
+                    <button id="add-log-btn" style="margin-left: auto;">手动添加日志</button>
+                </div>
+                <div class="actions" style="margin-top: 10px;">
+                    <label for="log-start-date">自定义范围:</label>
+                    <input type="date" id="log-start-date">
+                    <label for="log-end-date">至</label>
+                    <input type="date" id="log-end-date">
+                    <button id="log-filter-custom">筛选</button>
+                </div>
+                <div id="log-summary"></div>
+                <table id="log-table">
+                    <thead>
+                        <tr>
+                            <th>开始时间</th>
+                            <th>结束时间</th>
+                            <th>有效时长</th>
+                            <th>备注</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="log-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>添加新课程</h2>
+            <label for="course-url">课程链接:</label>
+            <input type="text" id="course-url" placeholder="https://www.bilibili.com/...">
+            <label for="course-content">粘贴B站合集内容:</label>
+            <textarea id="course-content" rows="10" placeholder="请从B站合集粘贴所有标题与时长到这里"></textarea>
+            <button id="add-course">添加课程</button>
+
+            <h2>数据管理</h2>
+            <button id="export-data">导出数据</button>
+            <button id="import-data" class="secondary">导入数据</button>
+            <input type="file" id="import-file" accept=".json" style="display: none;">
+
+            <div class="study-timer-section">
+                <h3>学习计时器</h3>
+                <div id="timer-display">00:00:00</div>
+                <div class="timer-controls">
+                    <button id="timer-start-btn">开始</button>
+                    <button id="timer-pause-btn" class="secondary">暂停</button>
+                    <button id="timer-stop-btn" class="danger">停止</button>
+                </div>
+                <input type="text" id="study-memo-input" placeholder="本次学习内容 (可选)">
+            </div>
+
+        </div>
+    </div>
+
+    <div id="add-log-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-log-modal">×</span>
+            <h3>手动添加学习日志</h3>
+            <label for="manual-start-time">开始时间:</label>
+            <input type="datetime-local" id="manual-start-time">
+
+            <label for="manual-end-time">结束时间:</label>
+            <input type="datetime-local" id="manual-end-time">
+
+            <label for="manual-memo">学习内容备注:</label>
+            <textarea id="manual-memo" rows="3"></textarea>
+
+            <div class="modal-actions">
+                <button id="cancel-add-log" class="secondary">取消</button>
+                <button id="confirm-add-log">确认添加</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="append-episodes-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-append-modal">×</span>
+            <h3>补充集数</h3>
+            <label for="append-episodes-content">粘贴新的选集信息:</label>
+            <textarea id="append-episodes-content" rows="10" placeholder="请从B站合集粘贴所有的标题与时长到这里"></textarea>
+
+            <div class="modal-actions">
+                <button id="cancel-append-episodes" class="secondary">取消</button>
+                <button id="confirm-append-episodes">确认补充</button>
+            </div>
+        </div>
+    </div>
+
+    <button id="back-to-top-btn" title="回到顶部">▲</button>
+
+    <script>
+        // ===== 数据存储 =====
+        const STORAGE_KEYS = {
+            COURSES: 'bilibili-courses',
+            SESSIONS: 'bilibili-study-sessions',
+            TIMER_STATE: 'bilibili-timer-state',
+            CURRENT_COURSE: 'currentLearningCourseName',
+            WEEKLY_GOAL: 'weeklyStudyGoal'
+        };
+
+        // ===== 状态管理 =====
+        const state = {
+            courses: JSON.parse(localStorage.getItem(STORAGE_KEYS.COURSES)) || [],
+            studySessions: JSON.parse(localStorage.getItem(STORAGE_KEYS.SESSIONS)) || [],
+            currentCourseIndex: -1,
+            sortDirection: { date: 'desc', progress: 'desc', chart: 'name' },
+            charts: { progress: null, trend: null },
+            timer: {
+                intervalId: null,
+                startTime: null,
+                totalPausedSeconds: 0,
+                pauseStartTime: 0,
+                isRunning: false
+            }
+        };
+
+        // ===== DOM 元素缓存 =====
+        const dom = {};
+
+        // ===== 工具函数 =====
+        const utils = {
+            getLocalDateString(date) {
+                const pad = num => String(num).padStart(2, '0');
+                return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+            },
+
+            getTodayString() {
+                return this.getLocalDateString(new Date());
+            },
+
+            parseDurationToSeconds(duration) {
+                if (!duration) return 0;
+                const parts = duration.split(':').map(p => parseInt(p) || 0);
+                if (parts.length === 2) return parts[0] * 60 + parts[1];
+                if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+                return 0;
+            },
+
+            secondsToHours(seconds) {
+                return (seconds / 3600).toFixed(2);
+            },
+
+            formatSecondsToHMS(totalSeconds) {
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = Math.floor(totalSeconds % 60);
+                const pad = num => String(num).padStart(2, '0');
+                return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+            },
+
+            formatDate(isoString) {
+                const date = new Date(isoString);
+                const pad = num => String(num).padStart(2, '0');
+                return `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+            },
+
+            formatDateTime(isoString) {
+                if (!isoString) return 'N/A';
+                const date = new Date(isoString);
+                const pad = num => String(num).padStart(2, '0');
+                return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+            },
+
+            generateVideoUrl(baseUrl, p) {
+                if (!baseUrl) return '#';
+                const cleanUrl = baseUrl.split('&p=')[0].split('?p=')[0];
+                return cleanUrl.includes('?') ? `${cleanUrl}&p=${p}` : `${cleanUrl}?p=${p}`;
+            },
+
+            generateId() {
+                return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+            }
+        };
+
+        // ===== 数据持久化 =====
+        const storage = {
+            saveCourses() {
+                localStorage.setItem(STORAGE_KEYS.COURSES, JSON.stringify(state.courses));
+            },
+
+            saveSessions() {
+                localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(state.studySessions));
+            },
+
+            saveTimerState() {
+                if (!state.timer.isRunning && state.timer.pauseStartTime === 0 && !state.timer.startTime) return;
+                const timerState = {
+                    sessionStartTime: state.timer.startTime ? state.timer.startTime.toISOString() : null,
+                    totalPausedSeconds: state.timer.totalPausedSeconds,
+                    pauseStartTime: state.timer.pauseStartTime,
+                    isRunning: state.timer.isRunning,
+                    memo: dom.studyMemoInput?.value || ''
+                };
+                localStorage.setItem(STORAGE_KEYS.TIMER_STATE, JSON.stringify(timerState));
+            },
+
+            loadTimerState() {
+                const savedState = JSON.parse(localStorage.getItem(STORAGE_KEYS.TIMER_STATE));
+                if (!savedState || !dom.timerDisplay) return;
+
+                state.timer.startTime = savedState.sessionStartTime ? new Date(savedState.sessionStartTime) : null;
+                state.timer.totalPausedSeconds = savedState.totalPausedSeconds || 0;
+                state.timer.pauseStartTime = savedState.pauseStartTime || 0;
+                state.timer.isRunning = savedState.isRunning || false;
+                if (dom.studyMemoInput) dom.studyMemoInput.value = savedState.memo || '';
+
+                if (state.timer.isRunning && state.timer.startTime) {
+                    timer.start();
+                } else if (!state.timer.isRunning && state.timer.startTime && state.timer.pauseStartTime > 0) {
+                    timer.updateDisplay();
+                    dom.timerStartBtn.textContent = '恢复';
+                    dom.timerStartBtn.disabled = false;
+                    dom.timerPauseBtn.disabled = true;
+                    dom.timerStopBtn.disabled = false;
+                } else {
+                    timer.resetUI();
+                }
+            }
+        };
+
+        // ===== 数据迁移 =====
+        const migration = {
+            migrateOldData() {
+                let coursesChanged = false;
+                state.courses.forEach(course => {
+                    course.videos.forEach(video => {
+                        if (video.completed && !video.completedDate) {
+                            video.completedDate = utils.getLocalDateString(new Date(course.lastUpdated || Date.now()));
+                            coursesChanged = true;
+                        } else if (!video.completed && video.completedDate) {
+                            video.completedDate = null;
+                            coursesChanged = true;
+                        }
+                    });
+                });
+                if (coursesChanged) storage.saveCourses();
+
+                let sessionsChanged = false;
+                const newSessions = [];
+                const sessionsToFix = [];
+
+                state.studySessions.forEach(session => {
+                    if (session.startTime && session.endTime &&
+                        utils.getLocalDateString(new Date(session.startTime)) !== utils.getLocalDateString(new Date(session.endTime))) {
+                        sessionsToFix.push(session);
+                    } else {
+                        newSessions.push(session);
+                    }
+                });
+
+                if (sessionsToFix.length > 0) {
+                    sessionsChanged = true;
+                    sessionsToFix.forEach(session => {
+                        newSessions.push(...session.splitCrossDay(session));
+                    });
+                    state.studySessions = newSessions;
+                }
+
+                state.studySessions.forEach(session => {
+                    if (!session.id) {
+                        session.id = utils.generateId();
+                        sessionsChanged = true;
+                    }
+                    if (typeof session.effectiveDuration !== 'number') {
+                        session.effectiveDuration = parseFloat(session.duration || session.effectiveDuration || 0) || 0;
+                        delete session.duration;
+                        sessionsChanged = true;
+                    }
+                });
+
+                if (sessionsChanged) storage.saveSessions();
+            }
+        };
+
+        // ===== 会话分割 =====
+        const session = {
+            splitCrossDay(sessionData) {
+                const startDateObj = new Date(sessionData.startTime);
+                const endDateObj = new Date(sessionData.endTime);
+                const startDay = utils.getLocalDateString(startDateObj);
+                const endDay = utils.getLocalDateString(endDateObj);
+
+                if (startDay === endDay) {
+                    return [{
+                        id: sessionData.id || utils.generateId(),
+                        startTime: startDateObj.toISOString(),
+                        endTime: endDateObj.toISOString(),
+                        effectiveDuration: sessionData.effectiveDuration,
+                        memo: sessionData.memo
+                    }];
+                }
+
+                const logs = [];
+                let currentStartTime = startDateObj;
+                const totalSessionDuration = (endDateObj - startDateObj) / 1000;
+                if (totalSessionDuration <= 0) return [];
+
+                while (utils.getLocalDateString(currentStartTime) !== endDay) {
+                    const dayEndTime = new Date(currentStartTime);
+                    dayEndTime.setHours(23, 59, 59, 999);
+
+                    const partDuration = (dayEndTime - currentStartTime) / 1000;
+                    const effectivePart = Math.round(sessionData.effectiveDuration * (partDuration / totalSessionDuration));
+
+                    if (effectivePart > 0) {
+                        logs.push({
+                            id: utils.generateId(),
+                            startTime: currentStartTime.toISOString(),
+                            endTime: dayEndTime.toISOString(),
+                            effectiveDuration: effectivePart,
+                            memo: (sessionData.memo || '') + ' (跨天部分)'
+                        });
+                    }
+
+                    currentStartTime = new Date(dayEndTime.getTime() + 1);
+                }
+
+                const remainingDuration = sessionData.effectiveDuration - logs.reduce((sum, log) => sum + log.effectiveDuration, 0);
+                if (remainingDuration > 0) {
+                    logs.push({
+                        id: utils.generateId(),
+                        startTime: currentStartTime.toISOString(),
+                        endTime: endDateObj.toISOString(),
+                        effectiveDuration: remainingDuration,
+                        memo: (sessionData.memo || '') + ' (跨天部分)'
+                    });
+                }
+                return logs;
+            }
+        };
+
+        // ===== 计时器 =====
+        const timer = {
+            start() {
+                if (state.timer.intervalId) return;
+
+                state.timer.isRunning = true;
+                if (!state.timer.startTime) {
+                    state.timer.startTime = new Date();
+                    state.timer.totalPausedSeconds = 0;
+                    state.timer.pauseStartTime = 0;
+                } else if (state.timer.pauseStartTime > 0) {
+                    state.timer.totalPausedSeconds += (Date.now() - state.timer.pauseStartTime) / 1000;
+                    state.timer.pauseStartTime = 0;
+                }
+
+                state.timer.intervalId = setInterval(() => this.updateDisplay(), 1000);
+                dom.timerStartBtn.textContent = '计时中...';
+                dom.timerStartBtn.disabled = true;
+                dom.timerPauseBtn.disabled = false;
+                dom.timerStopBtn.disabled = false;
+            },
+
+            pause() {
+                if (!state.timer.isRunning || !state.timer.startTime) return;
+
+                clearInterval(state.timer.intervalId);
+                state.timer.intervalId = null;
+                state.timer.isRunning = false;
+                state.timer.pauseStartTime = Date.now();
+
+                this.updateDisplay();
+                dom.timerStartBtn.textContent = '恢复';
+                dom.timerStartBtn.disabled = false;
+                dom.timerPauseBtn.disabled = true;
+                dom.timerStopBtn.disabled = false;
+            },
+
+            stop() {
+                if (!state.timer.startTime) {
+                    this.resetUI();
+                    localStorage.removeItem(STORAGE_KEYS.TIMER_STATE);
+                    return;
+                }
+
+                clearInterval(state.timer.intervalId);
+                state.timer.intervalId = null;
+                state.timer.isRunning = false;
+
+                const endTime = new Date();
+                let finalPausedSeconds = state.timer.totalPausedSeconds;
+                if (state.timer.pauseStartTime > 0) {
+                    finalPausedSeconds += (Date.now() - state.timer.pauseStartTime) / 1000;
+                }
+                const totalEffectiveDuration = Math.round((endTime - state.timer.startTime.getTime()) / 1000 - finalPausedSeconds);
+
+                if (totalEffectiveDuration <= 0) {
+                    alert('本次学习时长过短或无效,未记录。');
+                    this.resetAndSave();
+                    return;
+                }
+
+                const originalSessionData = {
+                    startTime: state.timer.startTime,
+                    endTime: endTime,
+                    effectiveDuration: totalEffectiveDuration,
+                    memo: dom.studyMemoInput.value.trim()
+                };
+
+                const newLogs = session.splitCrossDay(originalSessionData);
+                state.studySessions.push(...newLogs);
+                alert(`已记录学习日志,共 ${utils.formatSecondsToHMS(totalEffectiveDuration)}。` +
+                      (newLogs.length > 1 ? '已自动分割为多条记录。' : ''));
+
+                this.resetAndSave();
+            },
+
+            updateDisplay() {
+                if (!state.timer.startTime) {
+                    if (dom.timerDisplay) dom.timerDisplay.textContent = '00:00:00';
+                    return;
+                }
+
+                const now = Date.now();
+                let currentTotalRunningTime = (now - state.timer.startTime.getTime()) / 1000;
+                let currentPausedTime = state.timer.totalPausedSeconds;
+                if (state.timer.pauseStartTime > 0 && !state.timer.isRunning) {
+                    currentPausedTime += (now - state.timer.pauseStartTime) / 1000;
+                }
+
+                const currentEffectiveSeconds = currentTotalRunningTime - currentPausedTime;
+                if (dom.timerDisplay) {
+                    dom.timerDisplay.textContent = utils.formatSecondsToHMS(Math.round(currentEffectiveSeconds));
+                }
+            },
+
+            resetUI() {
+                dom.timerDisplay.textContent = '00:00:00';
+                dom.timerStartBtn.textContent = '开始';
+                dom.timerStartBtn.disabled = false;
+                dom.timerPauseBtn.disabled = true;
+                dom.timerStopBtn.disabled = true;
+                dom.studyMemoInput.value = '';
+
+                state.timer.startTime = null;
+                state.timer.totalPausedSeconds = 0;
+                state.timer.pauseStartTime = 0;
+                state.timer.isRunning = false;
+                if (state.timer.intervalId) {
+                    clearInterval(state.timer.intervalId);
+                    state.timer.intervalId = null;
+                }
+            },
+
+            resetAndSave() {
+                this.resetUI();
+                storage.saveSessions();
+                localStorage.removeItem(STORAGE_KEYS.TIMER_STATE);
+
+                const activeFilterBtn = dom.logFilterActions.querySelector('button.active');
+                if (activeFilterBtn) {
+                    log.handleFilter(activeFilterBtn.dataset.range);
+                } else {
+                    log.handleFilter('last7days');
+                }
+                overview.render();
+            }
+        };
+
+        // ===== 课程管理 =====
+        const course = {
+            calculateProgress(courseData) {
+                if (!courseData.videos.length) return 0;
+                const totalSeconds = courseData.videos.reduce((total, video) =>
+                    total + utils.parseDurationToSeconds(video.duration), 0);
+                const completedSeconds = courseData.videos.reduce((total, video) =>
+                    video.completed ? total + utils.parseDurationToSeconds(video.duration) : total, 0);
+                return totalSeconds > 0 ? Math.round((completedSeconds / totalSeconds) * 100) : 0;
+            },
+
+            extractVideosFromContent(content) {
+                const videos = [];
+                const lines = content.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+                const timePattern = /^(\d{1,2}):([0-5]?\d)(?::([0-5]?\d))?$/;
+                let i = 0;
+
+                while (i < lines.length) {
+                    const title = lines[i];
+                    i++;
+                    if (i < lines.length && timePattern.test(lines[i])) {
+                        videos.push({ title, duration: lines[i], completed: false, completedDate: null });
+                        i++;
+                    } else {
+                        const singleLineMatch = title.match(/^(.+?)\s+(\d{1,2}:[0-5]?\d(?::[0-5]?\d)?)$/);
+                        if (singleLineMatch) {
+                            videos.push({ title: singleLineMatch[1], duration: singleLineMatch[2], completed: false, completedDate: null });
+                        } else {
+                            videos.push({ title, duration: "00:00", completed: false, completedDate: null });
+                        }
+                    }
+                }
+                return videos;
+            },
+
+            add() {
+                const url = dom.courseUrl.value.trim();
+                const content = dom.courseContent.value.trim();
+
+                if (!url) { alert('请输入课程链接！'); return; }
+                if (!content) { alert('请粘贴B站合集内容！'); return; }
+
+                let courseName = prompt('请输入课程名称:', '未命名课程');
+                if (!courseName) return;
+
+                if (state.courses.some(c => c.name === courseName)) {
+                    alert('该课程名已存在！');
+                    return;
+                }
+
+                const videos = this.extractVideosFromContent(content);
+                if (videos.length === 0) {
+                    alert('无法解析视频列表,请确保复制了完整内容！');
+                    return;
+                }
+
+                state.courses.unshift({
+                    name: courseName,
+                    url: url,
+                    addedDate: new Date().toISOString(),
+                    lastUpdated: new Date().toISOString(),
+                    videos: videos
+                });
+
+                dom.courseUrl.value = '';
+                dom.courseContent.value = '';
+
+                state.currentCourseIndex = 0;
+                courses.render();
+                videos.render();
+                overview.render();
+                document.querySelector('.tab[data-tab="videos"]').click();
+                storage.saveCourses();
+                alert(`已添加课程: ${courseName}`);
+            },
+
+            delete(index) {
+                const courseName = state.courses[index].name;
+                if (confirm(`确定要删除课程 "${courseName}" 吗？`)) {
+                    if (localStorage.getItem(STORAGE_KEYS.CURRENT_COURSE) === courseName) {
+                        localStorage.removeItem(STORAGE_KEYS.CURRENT_COURSE);
+                    }
+                    state.courses.splice(index, 1);
+                    if (state.currentCourseIndex === index) {
+                        state.currentCourseIndex = -1;
+                        document.querySelector('.tab[data-tab="courses"]').click();
+                    } else if (state.currentCourseIndex > index) {
+                        state.currentCourseIndex--;
+                    }
+                    courses.render();
+                    videos.render();
+                    overview.render();
+                    storage.saveCourses();
+                    alert('课程已删除！');
+                }
+            },
+
+            sort(by) {
+                state.courses.sort((a, b) => {
+                    if (by === 'date') {
+                        const dateA = new Date(a.addedDate);
+                        const dateB = new Date(b.addedDate);
+                        return state.sortDirection.date === 'asc' ? dateA - dateB : dateB - dateA;
+                    } else {
+                        const progressA = this.calculateProgress(a);
+                        const progressB = this.calculateProgress(b);
+                        return state.sortDirection.progress === 'asc' ? progressA - progressB : progressB - progressA;
+                    }
+                });
+                courses.render();
+            },
+
+            appendEpisodes() {
+                if (state.currentCourseIndex === -1) {
+                    alert('请先选择一个课程！');
+                    return;
+                }
+
+                const content = dom.appendEpisodesContent.value.trim();
+                if (!content) {
+                    alert('请粘贴新的选集内容！');
+                    return;
+                }
+
+                const newVideos = this.extractVideosFromContent(content);
+                if (newVideos.length === 0) {
+                    alert('无法解析视频列表,请确保复制了完整内容！');
+                    return;
+                }
+
+                const currentCourse = state.courses[state.currentCourseIndex];
+                const existingTitles = new Set(currentCourse.videos.map(v => v.title));
+
+                const uniqueNewVideos = newVideos.filter(v => !existingTitles.has(v.title));
+
+                if (uniqueNewVideos.length === 0) {
+                    alert('没有发现新的集数,所有视频标题都已存在！');
+                    return;
+                }
+
+                currentCourse.videos.push(...uniqueNewVideos);
+                currentCourse.lastUpdated = new Date().toISOString();
+
+                dom.appendEpisodesModal.style.display = 'none';
+                dom.appendEpisodesContent.value = '';
+
+                videos.render();
+                courses.render();
+                overview.render();
+                storage.saveCourses();
+
+                alert(`成功补充了 ${uniqueNewVideos.length} 个新集数！\n(跳过了 ${newVideos.length - uniqueNewVideos.length} 个重复的视频)`);
+            }
+        };
+
+        // ===== 课程列表渲染 =====
+        const courses = {
+            render() {
+                const currentLearningCourseName = localStorage.getItem(STORAGE_KEYS.CURRENT_COURSE);
+                dom.coursesBody.innerHTML = '';
+
+                state.courses.forEach((courseData, index) => {
+                    const progress = course.calculateProgress(courseData);
+
+                    const row = document.createElement('tr');
+                    row.className = 'course-row';
+                    row.dataset.index = index;
+                    if (index === state.currentCourseIndex) row.classList.add('active');
+                    if (courseData.name === currentLearningCourseName) {
+                        row.classList.add('current-learning');
+                    }
+
+                    row.innerHTML = `
+                        <td><a href="${courseData.url}" target="_blank">${courseData.name}</a></td>
+                        <td>${utils.formatDate(courseData.addedDate)}</td>
+                        <td>${courseData.videos.length}</td>
+                        <td>
+                            <div class="progress-container">
+                                <progress value="${progress}" max="100"></progress>
+                                ${progress}%
+                            </div>
+                        </td>
+                        <td class="actions">
+                            <button class="secondary" onclick="viewCourseDetails(${index})">查看</button>
+                            <button class="${courseData.name === currentLearningCourseName ? 'warning' : 'set-current-btn'}"
+                                    onclick="setCurrentLearningCourse(${index}, event)">
+                                ${courseData.name === currentLearningCourseName ? '✔ 已设为当前' : '设为当前'}
+                            </button>
+                            <button class="secondary" onclick="setCourseVideosCompletionDate(${index})">设置日期</button>
+                            <button class="secondary" onclick="deleteCourse(${index})">删除</button>
+                        </td>
+                    `;
+
+                    row.addEventListener('click', (e) => {
+                        if (!e.target.closest('button')) {
+                            state.currentCourseIndex = index;
+                            videos.render();
+                            document.querySelectorAll('.course-row').forEach(r => r.classList.remove('active'));
+                            e.currentTarget.classList.add('active');
+                            document.querySelector('.tab[data-tab="videos"]').click();
+                        }
+                    });
+
+                    dom.coursesBody.appendChild(row);
+                });
+
+                storage.saveCourses();
+            }
+        };
+
+        // ===== 视频管理 =====
+        const videos = {
+            render() {
+                if (state.currentCourseIndex === -1 || !state.courses[state.currentCourseIndex]) {
+                    dom.currentCourseName.textContent = '请选择或添加课程';
+                    dom.videosBody.innerHTML = '';
+                    return;
+                }
+
+                const courseData = state.courses[state.currentCourseIndex];
+                dom.currentCourseName.textContent = courseData.name;
+                dom.videosBody.innerHTML = '';
+
+                courseData.videos.forEach((video, index) => {
+                    const row = document.createElement('tr');
+                    row.dataset.index = index;
+
+                    let completionStatusHtml = '';
+                    if (video.completed) {
+                        completionStatusHtml = `<span class="video-completed">已完成 ✓</span>`;
+                        if (video.completedDate) {
+                            completionStatusHtml += `<span class="completed-date-cell">${video.completedDate}</span>`;
+                        }
+                    } else {
+                        completionStatusHtml = `<span>未完成</span>`;
+                    }
+
+                    row.innerHTML = `
+                        <td class="index-cell">${index + 1}</td>
+                        <td>
+                            <a href="${utils.generateVideoUrl(courseData.url, index + 1)}" class="video-link" target="_blank">
+                                ${video.title}
+                            </a>
+                        </td>
+                        <td class="time-cell">${video.duration}</td>
+                        <td>${completionStatusHtml}</td>
+                    `;
+
+                    row.addEventListener('dblclick', () => {
+                        this.toggleCompletion(state.currentCourseIndex, index, !video.completed);
+                    });
+
+                    dom.videosBody.appendChild(row);
+                });
+            },
+
+            toggleCompletion(courseIndex, videoIndex, completed) {
+                const video = state.courses[courseIndex].videos[videoIndex];
+                video.completed = completed;
+
+                if (completed) {
+                    const selectedDate = dom.completionDateInput ? dom.completionDateInput.value : '';
+                    video.completedDate = selectedDate || utils.getTodayString();
+                } else {
+                    video.completedDate = null;
+                }
+
+                state.courses[courseIndex].lastUpdated = new Date().toISOString();
+                this.render();
+                courses.render();
+                overview.render();
+                storage.saveCourses();
+            },
+
+            markByRange(completed) {
+                if (state.currentCourseIndex === -1) {
+                    alert('请先选择一个课程！');
+                    return;
+                }
+
+                const courseData = state.courses[state.currentCourseIndex];
+                const rangeInput = dom.videoRangeInput.value.trim();
+
+                if (!rangeInput) {
+                    alert('请输入要标记的视频范围 (例如: 5-10)。');
+                    return;
+                }
+
+                const parts = rangeInput.split('-').map(p => parseInt(p.trim()));
+
+                if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) {
+                    alert('无效的范围格式。请输入例如 "5-10" 的格式。');
+                    return;
+                }
+
+                let [start, end] = parts;
+
+                if (start <= 0 || end <= 0 || start > courseData.videos.length || end > courseData.videos.length) {
+                    alert(`视频范围超出有效范围。当前课程共有 ${courseData.videos.length} 个视频。`);
+                    return;
+                }
+
+                if (start > end) [start, end] = [end, start];
+
+                let dateToSet = null;
+                if (completed) {
+                    const selectedDate = dom.completionDateInput ? dom.completionDateInput.value : '';
+                    dateToSet = selectedDate || utils.getTodayString();
+                }
+
+                let changedCount = 0;
+                for (let i = start - 1; i < end; i++) {
+                    const video = courseData.videos[i];
+                    if (video.completed !== completed || (completed && video.completedDate !== dateToSet)) {
+                        video.completed = completed;
+                        video.completedDate = dateToSet;
+                        changedCount++;
+                    }
+                }
+
+                if (changedCount > 0) {
+                    courseData.lastUpdated = new Date().toISOString();
+                    this.render();
+                    courses.render();
+                    overview.render();
+                    storage.saveCourses();
+                    alert(`成功将 ${changedCount} 个视频标记为 ${completed ? '已完成' : '未完成'}。`);
+                } else {
+                    alert('没有视频的状态发生改变。');
+                }
+                dom.videoRangeInput.value = '';
+            },
+
+            jumpToLastCompleted() {
+                if (state.currentCourseIndex === -1) {
+                    alert('请先选择一个课程。');
+                    return;
+                }
+                const courseData = state.courses[state.currentCourseIndex];
+                let lastCompletedIndex = -1;
+
+                for (let i = courseData.videos.length - 1; i >= 0; i--) {
+                    if (courseData.videos[i].completed) {
+                        lastCompletedIndex = i;
+                        break;
+                    }
+                }
+
+                if (lastCompletedIndex !== -1) {
+                    const targetRow = dom.videosBody.querySelector(`tr[data-index="${lastCompletedIndex}"]`);
+                    if (targetRow) {
+                        targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        targetRow.style.transition = 'background-color 0.5s';
+                        targetRow.style.backgroundColor = 'var(--bili-blue)';
+                        setTimeout(() => {
+                            targetRow.style.backgroundColor = '';
+                        }, 1500);
+                    }
+                } else {
+                    alert('当前课程没有已完成的视频。');
+                }
+            }
+        };
+
+        // ===== 进度总览 =====
+        const overview = {
+            render() {
+                const overviewTab = document.getElementById('overview-tab');
+
+                if (!overviewTab.querySelector('.stats-card') || overviewTab.querySelector('.stats-card').children.length === 0) {
+                    this.initializeOverviewTab(overviewTab);
+                }
+
+                let totalVideos = 0, completedVideos = 0, totalCourseSeconds = 0, completedCourseSeconds = 0;
+
+                state.courses.forEach(courseData => {
+                    totalVideos += courseData.videos.length;
+                    completedVideos += courseData.videos.filter(v => v.completed).length;
+
+                    courseData.videos.forEach(video => {
+                        const seconds = utils.parseDurationToSeconds(video.duration);
+                        totalCourseSeconds += seconds;
+                        if (video.completed) completedCourseSeconds += seconds;
+                    });
+                });
+
+                const remainingCourseSeconds = totalCourseSeconds - completedCourseSeconds;
+                const totalActualStudySeconds = state.studySessions.reduce((sum, s) =>
+                    sum + (typeof s.effectiveDuration === 'number' ? s.effectiveDuration : 0), 0);
+
+                dom.totalCoursesEl.textContent = state.courses.length;
+                dom.totalVideosEl.textContent = totalVideos;
+                dom.completedVideosEl.textContent = completedVideos;
+                dom.totalHoursEl.textContent = utils.secondsToHours(totalCourseSeconds);
+                dom.completedAudioHoursEl.textContent = utils.secondsToHours(completedCourseSeconds);
+                dom.remainingAudioHoursEl.textContent = utils.secondsToHours(remainingCourseSeconds);
+                dom.actualStudyHoursEl.textContent = utils.secondsToHours(totalActualStudySeconds);
+
+                this.renderProgressChart();
+                this.renderTrendChart();
+                this.renderGoals();
+            },
+
+            initializeOverviewTab(overviewTab) {
+                overviewTab.innerHTML = `
+                    <div class="stats-card">
+                        <div class="stat-item"><div class="stat-value" id="total-courses">0</div><div class="stat-label">总课程数</div></div>
+                        <div class="stat-item"><div class="stat-value" id="total-videos">0</div><div class="stat-label">总视频数</div></div>
+                        <div class="stat-item"><div class="stat-value" id="completed-videos">0</div><div class="stat-label">已完成视频</div></div>
+                        <div class="stat-item"><div class="stat-value" id="total-hours">0</div><div class="stat-label">总时长(小时)</div></div>
+                        <div class="stat-item"><div class="stat-value" id="completed-audio-hours">0</div><div class="stat-label">已听课时长(小时)</div></div>
+                        <div class="stat-item"><div class="stat-value" id="remaining-audio-hours">0</div><div class="stat-label">未听课时长(小时)</div></div>
+                        <div class="stat-item"><div class="stat-value" id="actual-study-hours">0</div><div class="stat-label">实际学习总时长(小时)</div></div>
+                    </div>
+                    <div class="chart-container"><canvas id="courseProgressChart"></canvas></div>
+                    <div class="actions">
+                        <button id="sort-chart-by-total">按总时长排序</button>
+                        <button id="sort-chart-by-completed">按已听课时长排序</button>
+                        <button id="sort-chart-by-progress">按听课进度排序</button>
+                    </div>
+                    <div class="chart-container" style="height: 250px;"><canvas id="studyTrendChart"></canvas></div>
+                    <div class="goal-section">
+                        <h3>学习目标</h3>
+                        <div class="actions">
+                            <label for="weekly-goal">每周目标:</label>
+                            <input type="number" id="weekly-goal" min="0" placeholder="小时">
+                            <button id="set-weekly-goal">设置目标</button>
+                        </div>
+                        <p>最近7天已完成: <span id="current-week-hours">0</span> 小时 / <span id="target-weekly-goal">0</span> 小时</p>
+                        <progress id="weekly-goal-progress" value="0" max="100" style="width: 100%; margin-top: 10px;"></progress>
+                    </div>
+                `;
+                initDomElements();
+                setupEventListeners();
+            },
+
+            renderProgressChart() {
+                let chartData = state.courses.map(courseData => {
+                    const courseTotalSeconds = courseData.videos.reduce((total, video) =>
+                        total + utils.parseDurationToSeconds(video.duration), 0);
+                    const courseCompletedSeconds = courseData.videos.reduce((total, video) =>
+                        video.completed ? total + utils.parseDurationToSeconds(video.duration) : total, 0);
+
+                    return {
+                        name: courseData.name,
+                        totalHours: utils.secondsToHours(courseTotalSeconds),
+                        completedHours: utils.secondsToHours(courseCompletedSeconds),
+                        progress: courseTotalSeconds > 0 ? (courseCompletedSeconds / courseTotalSeconds) * 100 : 0
+                    };
+                });
+
+                if (state.sortDirection.chart === 'total') {
+                    chartData.sort((a, b) => b.totalHours - a.totalHours);
+                } else if (state.sortDirection.chart === 'completed') {
+                    chartData.sort((a, b) => b.completedHours - a.completedHours);
+                } else if (state.sortDirection.chart === 'progress') {
+                    chartData.sort((a, b) => b.progress - a.progress);
+                }
+
+                const labels = chartData.map(c => c.name);
+                const chartTotalHoursData = chartData.map(c => parseFloat(c.totalHours));
+                const chartCompletedHoursData = chartData.map(c => parseFloat(c.completedHours));
+
+                if (state.charts.progress) {
+                    state.charts.progress.destroy();
+                    state.charts.progress = null;
+                }
+
+                const ctx = document.getElementById('courseProgressChart');
+                if (ctx) {
+                    state.charts.progress = new Chart(ctx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: '总听课时长(小时)',
+                                    data: chartTotalHoursData,
+                                    backgroundColor: '#23ade5',
+                                    borderColor: '#23ade5',
+                                    borderWidth: 1
+                                },
+                                {
+                                    label: '已听课时长(小时)',
+                                    data: chartCompletedHoursData,
+                                    backgroundColor: '#fb7299',
+                                    borderColor: '#fb7299',
+                                    borderWidth: 1
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { beginAtZero: true, title: { display: true, text: '小时' } },
+                                x: { ticks: { maxRotation: 90, minRotation: 45 } }
+                            },
+                            plugins: {
+                                legend: { position: 'top' },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `${context.dataset.label}: ${context.raw.toFixed(2)} 小时`;
+                                        }
+                                    }
+                                }
+                            },
+                            onClick: (e) => {
+                                const elements = state.charts.progress.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
+                                if (elements.length) {
+                                    const index = elements[0].index;
+                                    const courseIndex = state.courses.findIndex(c => c.name === labels[index]);
+                                    if (courseIndex !== -1) {
+                                        state.currentCourseIndex = courseIndex;
+                                        videos.render();
+                                        document.querySelector('.tab[data-tab="videos"]').click();
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            },
+
+            renderTrendChart() {
+                const dailyCompletedAudioSeconds = new Map();
+                state.courses.forEach(courseData => {
+                    courseData.videos.forEach(video => {
+                        if (video.completed && video.completedDate) {
+                            const dateKey = video.completedDate;
+                            const seconds = utils.parseDurationToSeconds(video.duration);
+                            dailyCompletedAudioSeconds.set(dateKey, (dailyCompletedAudioSeconds.get(dateKey) || 0) + seconds);
+                        }
+                    });
+                });
+
+                const dailyActualStudySeconds = new Map();
+                state.studySessions.forEach(s => {
+                    const dateKey = utils.getLocalDateString(new Date(s.startTime));
+                    dailyActualStudySeconds.set(dateKey, (dailyActualStudySeconds.get(dateKey) || 0) + s.effectiveDuration);
+                });
+
+                const dates = [];
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                for (let i = -29; i <= 1; i++) {
+                    const d = new Date(today);
+                    d.setDate(today.getDate() + i);
+                    dates.push(utils.getLocalDateString(d));
+                }
+
+                const labels = dates.map(dateStr => {
+                    const d = new Date(dateStr);
+                    return `${d.getMonth() + 1}/${d.getDate()}`;
+                });
+
+                const audioData = dates.map(dateStr => parseFloat(utils.secondsToHours(dailyCompletedAudioSeconds.get(dateStr) || 0)));
+                const actualData = dates.map(dateStr => parseFloat(utils.secondsToHours(dailyActualStudySeconds.get(dateStr) || 0)));
+
+                if (state.charts.trend) {
+                    state.charts.trend.destroy();
+                    state.charts.trend = null;
+                }
+
+                const ctxTrend = document.getElementById('studyTrendChart');
+                if (ctxTrend) {
+                    state.charts.trend = new Chart(ctxTrend.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: '每日已听课时长 (小时)',
+                                    data: audioData,
+                                    borderColor: '#fb7299',
+                                    backgroundColor: 'rgba(251, 114, 153, 0.2)',
+                                    tension: 0.3,
+                                    fill: true
+                                },
+                                {
+                                    label: '每日实际学习时长 (小时)',
+                                    data: actualData,
+                                    borderColor: '#23ade5',
+                                    backgroundColor: 'rgba(35, 173, 229, 0.2)',
+                                    tension: 0.3,
+                                    fill: true
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: { beginAtZero: true, title: { display: true, text: '小时' } },
+                                x: { title: { display: true, text: '日期' } }
+                            },
+                            plugins: {
+                                legend: { display: true, position: 'top' },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `${context.dataset.label}: ${context.raw.toFixed(2)} 小时`;
+                                        },
+                                        title: function(context) {
+                                            return dates[context[0].dataIndex];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            },
+
+            renderGoals() {
+                if (!document.getElementById('current-week-hours')) return;
+
+                const targetGoal = parseFloat(localStorage.getItem(STORAGE_KEYS.WEEKLY_GOAL)) || 0;
+                if (dom.weeklyGoalInput) dom.weeklyGoalInput.value = targetGoal > 0 ? targetGoal : '';
+                if (dom.targetWeeklyGoalEl) dom.targetWeeklyGoalEl.textContent = targetGoal.toFixed(1);
+
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(today.getDate() - 6);
+                sevenDaysAgo.setHours(0, 0, 0, 0);
+
+                const sevenDaysAgoTimestamp = sevenDaysAgo.getTime();
+                const todayEndTimestamp = today.getTime();
+
+                let recent7DaysActualStudySeconds = 0;
+                state.studySessions.forEach(s => {
+                    const sessionStartTimestamp = new Date(s.startTime).getTime();
+                    if (sessionStartTimestamp >= sevenDaysAgoTimestamp && sessionStartTimestamp <= todayEndTimestamp) {
+                        recent7DaysActualStudySeconds += (typeof s.effectiveDuration === 'number' ? s.effectiveDuration : 0);
+                    }
+                });
+
+                const recent7DaysActualStudyHours = parseFloat(utils.secondsToHours(recent7DaysActualStudySeconds));
+                if (dom.currentWeekHoursEl) dom.currentWeekHoursEl.textContent = recent7DaysActualStudyHours.toFixed(1);
+
+                let progressPercentage = 0;
+                if (targetGoal > 0) {
+                    progressPercentage = (recent7DaysActualStudyHours / targetGoal) * 100;
+                    if (progressPercentage > 100) progressPercentage = 100;
+                }
+                if (dom.weeklyGoalProgressEl) {
+                    dom.weeklyGoalProgressEl.value = progressPercentage;
+                    dom.weeklyGoalProgressEl.max = 100;
+
+                    if (progressPercentage >= 100) {
+                        dom.weeklyGoalProgressEl.style.accentColor = '#28a745';
+                    } else if (progressPercentage >= 50) {
+                        dom.weeklyGoalProgressEl.style.accentColor = '#ffc107';
+                    } else {
+                        dom.weeklyGoalProgressEl.style.accentColor = '#dc3545';
+                    }
+                }
+            }
+        };
+
+        // ===== 学习日志 =====
+        const log = {
+            handleFilter(range) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                let startDate, endDate;
+                endDate = new Date();
+                endDate.setHours(23, 59, 59, 999);
+
+                switch (range) {
+                    case 'today':
+                        startDate = today;
+                        break;
+                    case 'yesterday':
+                        startDate = new Date(today);
+                        startDate.setDate(today.getDate() - 1);
+                        endDate = new Date(today);
+                        endDate.setDate(today.getDate() - 1);
+                        endDate.setHours(23, 59, 59, 999);
+                        break;
+                    case 'last7days':
+                        startDate = new Date(today);
+                        startDate.setDate(today.getDate() - 6);
+                        break;
+                    case 'thisMonth':
+                        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                        break;
+                    case 'lastMonth':
+                        startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                        endDate = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
+                        break;
+                    case 'custom':
+                        startDate = dom.logStartDateInput.value ? new Date(dom.logStartDateInput.value) : null;
+                        endDate = dom.logEndDateInput.value ? new Date(dom.logEndDateInput.value) : null;
+                        if (startDate) startDate.setHours(0, 0, 0, 0);
+                        if (endDate) endDate.setHours(23, 59, 59, 999);
+                        break;
+                    case 'all':
+                    default:
+                        startDate = null;
+                        endDate = null;
+                        break;
+                }
+                this.render(startDate, endDate);
+            },
+
+            render(startDate, endDate) {
+                if (!dom.logTableBody) return;
+                dom.logTableBody.innerHTML = '';
+
+                let filteredSessions = state.studySessions;
+                if (startDate || endDate) {
+                    filteredSessions = state.studySessions.filter(s => {
+                        const sessionStart = new Date(s.startTime).getTime();
+                        const isAfterStart = startDate ? sessionStart >= startDate.getTime() : true;
+                        const isBeforeEnd = endDate ? sessionStart <= endDate.getTime() : true;
+                        return isAfterStart && isBeforeEnd;
+                    });
+                }
+
+                const totalFilteredSeconds = filteredSessions.reduce((sum, s) => sum + s.effectiveDuration, 0);
+                dom.logSummaryEl.innerHTML = `筛选结果共 ${filteredSessions.length} 条日志,总时长: <span>${utils.formatSecondsToHMS(totalFilteredSeconds)}</span>`;
+
+                [...filteredSessions].reverse().forEach(s => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${utils.formatDateTime(s.startTime)}</td>
+                        <td>${utils.formatDateTime(s.endTime)}</td>
+                        <td>${utils.formatSecondsToHMS(s.effectiveDuration)}</td>
+                        <td>${s.memo || '-'}</td>
+                        <td><button class="danger" onclick="deleteStudySession('${s.id}')" style="width: auto; padding: 4px 8px; font-size: 12px;">删除</button></td>
+                    `;
+                    dom.logTableBody.appendChild(tr);
+                });
+            },
+
+            deleteSession(sessionId) {
+                if (confirm('确定要删除这条学习日志吗？')) {
+                    state.studySessions = state.studySessions.filter(s => s.id !== sessionId);
+                    storage.saveSessions();
+                    const activeFilterBtn = dom.logFilterActions.querySelector('button.active');
+                    if (activeFilterBtn) {
+                        this.handleFilter(activeFilterBtn.dataset.range);
+                    } else {
+                        this.handleFilter('custom');
+                    }
+                    overview.render();
+                }
+            },
+
+            handleAddSubmit() {
+                const startTimeValue = dom.manualStartTimeInput.value;
+                const endTimeValue = dom.manualEndTimeInput.value;
+                const memo = dom.manualMemoInput.value.trim();
+
+                if (!startTimeValue || !endTimeValue) {
+                    alert('请填写开始和结束时间。');
+                    return;
+                }
+
+                const startTime = new Date(startTimeValue);
+                const endTime = new Date(endTimeValue);
+
+                if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+                    alert('无效的日期时间格式。');
+                    return;
+                }
+
+                if (startTime >= endTime) {
+                    alert('结束时间必须晚于开始时间。');
+                    return;
+                }
+
+                const effectiveDuration = Math.round((endTime - startTime) / 1000);
+
+                const sessionData = {
+                    startTime: startTime,
+                    endTime: endTime,
+                    effectiveDuration: effectiveDuration,
+                    memo: memo
+                };
+
+                const newLogs = session.splitCrossDay(sessionData);
+                state.studySessions.push(...newLogs);
+                state.studySessions.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+                storage.saveSessions();
+                alert(`成功添加了 ${newLogs.length} 条学习日志。`);
+
+                dom.addLogModal.style.display = 'none';
+                dom.manualStartTimeInput.value = '';
+                dom.manualEndTimeInput.value = '';
+                dom.manualMemoInput.value = '';
+
+                this.render();
+                overview.render();
+            }
+        };
+
+        // ===== 数据导入导出 =====
+        const dataManagement = {
+            export() {
+                const dataToExport = {
+                    courses: state.courses,
+                    studySessions: state.studySessions
+                };
+                const dataStr = JSON.stringify(dataToExport, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `bilibili-study-data-${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            },
+
+            import(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        if (!importedData.courses || !Array.isArray(importedData.courses)) {
+                            throw new Error("Invalid data format: 'courses' array missing.");
+                        }
+
+                        if (confirm(`确定要导入数据吗？这将覆盖当前所有课程和学习会话数据。`)) {
+                            state.courses = importedData.courses;
+                            state.studySessions = importedData.studySessions && Array.isArray(importedData.studySessions) ? importedData.studySessions : [];
+
+                            migration.migrateOldData();
+                            state.currentCourseIndex = -1;
+                            courses.render();
+                            overview.render();
+                            log.render();
+                            document.querySelector('.tab[data-tab="courses"]').click();
+                            storage.saveCourses();
+                            storage.saveSessions();
+                            alert('数据导入成功！');
+                        }
+                    } catch (error) {
+                        alert('导入失败,文件格式不正确或数据无效！' + error.message);
+                    }
+                    event.target.value = '';
+                };
+                reader.readAsText(file);
+            }
+        };
+
+        // ===== DOM 元素初始化 =====
+        function initDomElements() {
+            dom.coursesBody = document.getElementById('courses-body');
+            dom.videosBody = document.getElementById('videos-body');
+            dom.currentCourseName = document.getElementById('current-course-name');
+            dom.courseUrl = document.getElementById('course-url');
+            dom.courseContent = document.getElementById('course-content');
+            dom.addCourseBtn = document.getElementById('add-course');
+            dom.sortByDateBtn = document.getElementById('sort-by-date');
+            dom.sortByProgressBtn = document.getElementById('sort-by-progress');
+            dom.videoRangeInput = document.getElementById('video-range-input');
+            dom.markRangeCompletedBtn = document.getElementById('mark-range-completed');
+            dom.markRangeUncompletedBtn = document.getElementById('mark-range-uncompleted');
+            dom.exportBtn = document.getElementById('export-data');
+            dom.importBtn = document.getElementById('import-data');
+            dom.importFile = document.getElementById('import-file');
+            dom.tabs = document.querySelectorAll('.tab');
+            dom.tabContents = document.querySelectorAll('.tab-content');
+
+            dom.totalCoursesEl = document.getElementById('total-courses');
+            dom.totalVideosEl = document.getElementById('total-videos');
+            dom.completedVideosEl = document.getElementById('completed-videos');
+            dom.totalHoursEl = document.getElementById('total-hours');
+            dom.completedAudioHoursEl = document.getElementById('completed-audio-hours');
+            dom.remainingAudioHoursEl = document.getElementById('remaining-audio-hours');
+            dom.actualStudyHoursEl = document.getElementById('actual-study-hours');
+
+            dom.sortChartByTotalBtn = document.getElementById('sort-chart-by-total');
+            dom.sortChartByCompletedBtn = document.getElementById('sort-chart-by-completed');
+            dom.sortChartByProgressBtn = document.getElementById('sort-chart-by-progress');
+
+            dom.weeklyGoalInput = document.getElementById('weekly-goal');
+            dom.setWeeklyGoalBtn = document.getElementById('set-weekly-goal');
+            dom.currentWeekHoursEl = document.getElementById('current-week-hours');
+            dom.targetWeeklyGoalEl = document.getElementById('target-weekly-goal');
+            dom.weeklyGoalProgressEl = document.getElementById('weekly-goal-progress');
+
+            dom.completionDateInput = document.getElementById('completion-date-input');
+            if (dom.completionDateInput) {
+                dom.completionDateInput.value = utils.getTodayString();
+            }
+            dom.jumpToLastCompletedBtn = document.getElementById('jump-to-last-completed');
+
+            dom.timerDisplay = document.getElementById('timer-display');
+            dom.timerStartBtn = document.getElementById('timer-start-btn');
+            dom.timerPauseBtn = document.getElementById('timer-pause-btn');
+            dom.timerStopBtn = document.getElementById('timer-stop-btn');
+            dom.studyMemoInput = document.getElementById('study-memo-input');
+
+            dom.logFilterActions = document.getElementById('log-filter-actions');
+            dom.logStartDateInput = document.getElementById('log-start-date');
+            dom.logEndDateInput = document.getElementById('log-end-date');
+            dom.logFilterCustomBtn = document.getElementById('log-filter-custom');
+            dom.logSummaryEl = document.getElementById('log-summary');
+            dom.logTableBody = document.getElementById('log-table-body');
+            dom.addLogBtn = document.getElementById('add-log-btn');
+
+            dom.addLogModal = document.getElementById('add-log-modal');
+            dom.closeLogModalBtn = document.getElementById('close-log-modal');
+            dom.cancelAddLogBtn = document.getElementById('cancel-add-log');
+            dom.confirmAddLogBtn = document.getElementById('confirm-add-log');
+            dom.manualStartTimeInput = document.getElementById('manual-start-time');
+            dom.manualEndTimeInput = document.getElementById('manual-end-time');
+            dom.manualMemoInput = document.getElementById('manual-memo');
+
+            dom.appendEpisodesBtn = document.getElementById('append-episodes-btn');
+            dom.appendEpisodesModal = document.getElementById('append-episodes-modal');
+            dom.closeAppendModalBtn = document.getElementById('close-append-modal');
+            dom.cancelAppendEpisodesBtn = document.getElementById('cancel-append-episodes');
+            dom.confirmAppendEpisodesBtn = document.getElementById('confirm-append-episodes');
+            dom.appendEpisodesContent = document.getElementById('append-episodes-content');
+
+            dom.backToTopBtn = document.getElementById('back-to-top-btn');
+        }
+
+        // ===== 事件监听器设置 =====
+        function setupEventListeners() {
+            if (dom.addCourseBtn) dom.addCourseBtn.addEventListener('click', () => course.add());
+
+            if (dom.sortByDateBtn) {
+                dom.sortByDateBtn.addEventListener('click', () => {
+                    state.sortDirection.date = state.sortDirection.date === 'asc' ? 'desc' : 'asc';
+                    course.sort('date');
+                    dom.sortByDateBtn.textContent = `按添加时间 ${state.sortDirection.date === 'asc' ? '▲' : '▼'}`;
+                });
+            }
+
+            if (dom.sortByProgressBtn) {
+                dom.sortByProgressBtn.addEventListener('click', () => {
+                    state.sortDirection.progress = state.sortDirection.progress === 'asc' ? 'desc' : 'asc';
+                    course.sort('progress');
+                    dom.sortByProgressBtn.textContent = `按学习进度 ${state.sortDirection.progress === 'asc' ? '▲' : '▼'}`;
+                });
+            }
+
+            if (dom.markRangeCompletedBtn) dom.markRangeCompletedBtn.addEventListener('click', () => videos.markByRange(true));
+            if (dom.markRangeUncompletedBtn) dom.markRangeUncompletedBtn.addEventListener('click', () => videos.markByRange(false));
+            if (dom.jumpToLastCompletedBtn) dom.jumpToLastCompletedBtn.addEventListener('click', () => videos.jumpToLastCompleted());
+
+            if (dom.exportBtn) dom.exportBtn.addEventListener('click', () => dataManagement.export());
+            if (dom.importBtn) dom.importBtn.addEventListener('click', () => dom.importFile.click());
+            if (dom.importFile) dom.importFile.addEventListener('change', (e) => dataManagement.import(e));
+
+            const editCourseNameBtn = document.getElementById('edit-course-name');
+            if (editCourseNameBtn) {
+                editCourseNameBtn.addEventListener('click', () => {
+                    const currentCourse = state.courses[state.currentCourseIndex];
+                    const newName = prompt('请输入新的课程名称:', currentCourse.name);
+
+                    if (!newName || newName.trim() === '') return;
+                    if (newName === currentCourse.name) return;
+                    if (state.courses.some(c => c.name === newName)) {
+                        alert('该课程名已存在！');
+                        return;
+                    }
+                    currentCourse.name = newName;
+                    currentCourse.lastUpdated = new Date().toISOString();
+                    dom.currentCourseName.textContent = newName;
+
+                    courses.render();
+                    overview.render();
+                    storage.saveCourses();
+                    alert('课程名称已修改！');
+                });
+            }
+
+            if (dom.setWeeklyGoalBtn) {
+                dom.setWeeklyGoalBtn.addEventListener('click', () => {
+                    const goalValue = parseFloat(dom.weeklyGoalInput.value);
+                    if (isNaN(goalValue) || goalValue < 0) {
+                        alert('请输入有效的每周目标小时数！');
+                        return;
+                    }
+                    localStorage.setItem(STORAGE_KEYS.WEEKLY_GOAL, goalValue);
+                    alert(`每周学习目标已设置为 ${goalValue} 小时！`);
+                    overview.renderGoals();
+                });
+            }
+
+            if (dom.timerStartBtn) dom.timerStartBtn.addEventListener('click', () => timer.start());
+            if (dom.timerPauseBtn) dom.timerPauseBtn.addEventListener('click', () => timer.pause());
+            if (dom.timerStopBtn) dom.timerStopBtn.addEventListener('click', () => timer.stop());
+
+            if (dom.logFilterActions) {
+                dom.logFilterActions.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'BUTTON' && e.target.dataset.range) {
+                        dom.logFilterActions.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                        e.target.classList.add('active');
+                        log.handleFilter(e.target.dataset.range);
+                    }
+                });
+            }
+
+            if (dom.logFilterCustomBtn) {
+                dom.logFilterCustomBtn.addEventListener('click', () => {
+                    dom.logFilterActions.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                    log.handleFilter('custom');
+                });
+            }
+
+            if (dom.addLogBtn) dom.addLogBtn.addEventListener('click', () => { dom.addLogModal.style.display = 'block'; });
+            if (dom.closeLogModalBtn) dom.closeLogModalBtn.addEventListener('click', () => { dom.addLogModal.style.display = 'none'; });
+            if (dom.cancelAddLogBtn) dom.cancelAddLogBtn.addEventListener('click', () => { dom.addLogModal.style.display = 'none'; });
+            if (dom.confirmAddLogBtn) dom.confirmAddLogBtn.addEventListener('click', () => log.handleAddSubmit());
+
+            if (dom.appendEpisodesBtn) dom.appendEpisodesBtn.addEventListener('click', () => {
+                if (state.currentCourseIndex === -1) {
+                    alert('请先选择一个课程！');
+                    return;
+                }
+                dom.appendEpisodesModal.style.display = 'block';
+            });
+            if (dom.closeAppendModalBtn) dom.closeAppendModalBtn.addEventListener('click', () => { dom.appendEpisodesModal.style.display = 'none'; });
+            if (dom.cancelAppendEpisodesBtn) dom.cancelAppendEpisodesBtn.addEventListener('click', () => { dom.appendEpisodesModal.style.display = 'none'; });
+            if (dom.confirmAppendEpisodesBtn) dom.confirmAppendEpisodesBtn.addEventListener('click', () => course.appendEpisodes());
+
+            window.addEventListener('click', (e) => {
+                if (e.target == dom.addLogModal) {
+                    dom.addLogModal.style.display = 'none';
+                }
+                if (e.target == dom.appendEpisodesModal) {
+                    dom.appendEpisodesModal.style.display = 'none';
+                }
+            });
+
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 200) {
+                    dom.backToTopBtn.style.display = "block";
+                } else {
+                    dom.backToTopBtn.style.display = "none";
+                }
+            });
+
+            if (dom.backToTopBtn) {
+                dom.backToTopBtn.addEventListener('click', () => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+
+            if (dom.tabs) {
+                dom.tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        dom.tabs.forEach(t => t.classList.remove('active'));
+                        dom.tabContents.forEach(c => c.classList.remove('active'));
+
+                        tab.classList.add('active');
+                        document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+
+                        if (tab.dataset.tab === 'overview') {
+                            overview.render();
+                        } else if (tab.dataset.tab === 'log') {
+                            const defaultFilterBtn = dom.logFilterActions.querySelector('[data-range="last7days"]');
+                            if (defaultFilterBtn) defaultFilterBtn.click();
+                            else log.handleFilter('last7days');
+                        } else if (tab.dataset.tab === 'videos' && state.currentCourseIndex === -1) {
+                            if (state.courses.length > 0) {
+                                state.currentCourseIndex = 0;
+                                videos.render();
+                                courses.render();
+                            } else {
+                                dom.currentCourseName.textContent = '请选择或添加课程';
+                                dom.videosBody.innerHTML = '';
+                            }
+                        }
+                    });
+                });
+            }
+
+            if (dom.sortChartByTotalBtn) {
+                dom.sortChartByTotalBtn.addEventListener('click', () => {
+                    state.sortDirection.chart = 'total';
+                    overview.render();
+                });
+            }
+            if (dom.sortChartByCompletedBtn) {
+                dom.sortChartByCompletedBtn.addEventListener('click', () => {
+                    state.sortDirection.chart = 'completed';
+                    overview.render();
+                });
+            }
+            if (dom.sortChartByProgressBtn) {
+                dom.sortChartByProgressBtn.addEventListener('click', () => {
+                    state.sortDirection.chart = 'progress';
+                    overview.render();
+                });
+            }
+        }
+
+        // ===== 全局函数 (供 HTML onclick 使用) =====
+        function viewCourseDetails(index) {
+            state.currentCourseIndex = index;
+            videos.render();
+            document.querySelector('.tab[data-tab="videos"]').click();
+        }
+
+        function setCurrentLearningCourse(index, event) {
+            event.stopPropagation();
+            const courseName = state.courses[index].name;
+            const currentLearningCourseName = localStorage.getItem(STORAGE_KEYS.CURRENT_COURSE);
+
+            if (currentLearningCourseName === courseName) {
+                localStorage.removeItem(STORAGE_KEYS.CURRENT_COURSE);
+                alert(`已取消 "${courseName}" 的当前学习状态。`);
+            } else {
+                localStorage.setItem(STORAGE_KEYS.CURRENT_COURSE, courseName);
+                alert(`已将 "${courseName}" 设为当前学习课程。`);
+            }
+            courses.render();
+        }
+
+        function setCourseVideosCompletionDate(courseIndex) {
+            const courseData = state.courses[courseIndex];
+            const defaultDate = utils.getTodayString();
+            const newDate = prompt(`为课程 "${courseData.name}" 的所有已完成视频设置完成日期 (格式: YYYY-MM-DD):`, defaultDate);
+
+            if (newDate === null) return;
+            if (!newDate.trim()) {
+                alert('日期不能为空。');
+                return;
+            }
+
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate) || isNaN(new Date(newDate).getTime())) {
+                alert('日期格式不正确或无效,请使用 YYYY-MM-DD 格式。');
+                return;
+            }
+
+            let changedCount = 0;
+            courseData.videos.forEach(video => {
+                if (video.completed && video.completedDate !== newDate) {
+                    video.completedDate = newDate;
+                    changedCount++;
+                }
+            });
+
+            if (changedCount > 0) {
+                courseData.lastUpdated = new Date().toISOString();
+                storage.saveCourses();
+                courses.render();
+                if (state.currentCourseIndex === courseIndex) {
+                    videos.render();
+                }
+                overview.render();
+                alert(`成功更新了 ${changedCount} 个视频的完成日期为 ${newDate}。`);
+            } else {
+                alert('没有视频的完成日期发生改变,或者它们尚未完成。');
+            }
+        }
+
+        function deleteCourse(index) {
+            course.delete(index);
+        }
+
+        function deleteStudySession(sessionId) {
+            log.deleteSession(sessionId);
+        }
+
+        // ===== 初始化 =====
+        function init() {
+            initDomElements();
+            migration.migrateOldData();
+
+            const currentLearningCourseName = localStorage.getItem(STORAGE_KEYS.CURRENT_COURSE);
+            if (currentLearningCourseName) {
+                const index = state.courses.findIndex(c => c.name === currentLearningCourseName);
+                if (index !== -1) {
+                    state.currentCourseIndex = index;
+                }
+            }
+
+            courses.render();
+            setupEventListeners();
+            storage.loadTimerState();
+
+            if (state.currentCourseIndex !== -1) {
+                document.querySelector('.tab[data-tab="videos"]').click();
+                videos.render();
+            } else {
+                document.querySelector('.tab[data-tab="overview"]').click();
+            }
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') {
+                    storage.saveTimerState();
+                }
+            });
+            window.addEventListener('beforeunload', () => storage.saveTimerState());
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
